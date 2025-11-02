@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "dev": "nodemon src/app.js",
-    "start": "node src/app.js"
+    "start": "node src/app.js",
+    "db:init": "node scripts/initDB.js"
   },
   "dependencies": {
     "express": "^4.18.2",

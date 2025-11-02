@@ -1,0 +1,137 @@
+import { Reserva } from "../models/Reserva.js";
+import { validarCrearReserva } from "../validators/reservasValidator.js";
+
+// Crear nueva reserva
+export const crearReserva = async (req, res) => {
+  try {
+    const { usuario_id, aula_id, fecha, hora_inicio, hora_fin } = req.body;
+
+    // Validar datos
+    const validacion = validarCrearReserva({
+      usuario_id,
+      aula_id,
+      fecha,
+      hora_inicio,
+      hora_fin,
+    });
+
+    if (!validacion.valido) {
+      return res.status(400).json({ mensaje: validacion.mensaje });
+    }
+
+    // Verificar solapamiento de horarios
+    const hay_solapamiento = await Reserva.verificarSolapamiento(
+      aula_id,
+      fecha,
+      hora_inicio,
+      hora_fin
+    );
+
+    if (hay_solapamiento) {
+      return res.status(400).json({
+        mensaje: "Ya existe una reserva en ese horario para esta aula",
+      });
+    }
+
+    // Crear reserva
+    const nuevaReserva = await Reserva.crear(
+      usuario_id,
+      aula_id,
+      fecha,
+      hora_inicio,
+      hora_fin
+    );
+
+    res.status(201).json({
+      mensaje: "✅ Reserva creada correctamente",
+      reserva: nuevaReserva,
+    });
+  } catch (error) {
+    console.error("Error en crearReserva:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
+
+// Obtener todas las reservas
+export const obtenerReservas = async (req, res) => {
+  try {
+    const reservas = await Reserva.obtenerTodas();
+    res.json(reservas);
+  } catch (error) {
+    console.error("Error en obtenerReservas:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
+
+// Obtener reservas del usuario autenticado
+export const obtenerMisReservas = async (req, res) => {
+  try {
+    const usuario_id = req.usuario.id;
+    const reservas = await Reserva.obtenerPorUsuario(usuario_id);
+    res.json(reservas);
+  } catch (error) {
+    console.error("Error en obtenerMisReservas:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
+
+// Cancelar reserva
+export const cancelarReserva = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const usuario_id = req.usuario.id;
+
+    // Obtener reserva
+    const reserva = await Reserva.obtenerPorId(id);
+
+    if (!reserva) {
+      return res.status(404).json({ mensaje: "Reserva no encontrada" });
+    }
+
+    // Verificar que el usuario sea el dueño o sea admin
+    if (reserva.usuario_id !== usuario_id && req.usuario.rol !== "administrador") {
+      return res
+        .status(403)
+        .json({ mensaje: "No tienes permiso para cancelar esta reserva" });
+    }
+
+    // Cancelar
+    const cancelado = await Reserva.cancelar(id);
+
+    if (cancelado) {
+      res.json({ mensaje: "✅ Reserva cancelada correctamente" });
+    } else {
+      res.status(400).json({ mensaje: "No se pudo cancelar la reserva" });
+    }
+  } catch (error) {
+    console.error("Error en cancelarReserva:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
+
+// Obtener reserva por ID
+export const obtenerReservaPorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const reserva = await Reserva.obtenerPorId(id);
+
+    if (!reserva) {
+      return res.status(404).json({ mensaje: "Reserva no encontrada" });
+    }
+
+    res.json(reserva);
+  } catch (error) {
+    console.error("Error en obtenerReservaPorId:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};

@@ -2,6 +2,10 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
+import authRoutes from "./routes/authRoutes.js";
+import aulasRoutes from "./routes/aulasRoutes.js";
+import reservasRoutes from "./routes/reservasRoutes.js";
+import incidenciasRoutes from "./routes/incidenciasRoutes.js";
 
 dotenv.config();
 
@@ -15,6 +19,11 @@ app.use(express.json());
 app.get("/", (req, res) => {
   res.json({ mensaje: "✅ Servidor EduRooms funcionando" });
 });
+
+app.use("/api/auth", authRoutes);
+app.use("/api/aulas", aulasRoutes);
+app.use("/api/reservas", reservasRoutes);
+app.use("/api/incidencias", incidenciasRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", database: "connected" });
