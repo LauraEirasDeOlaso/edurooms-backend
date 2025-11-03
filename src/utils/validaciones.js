@@ -6,7 +6,7 @@ export const validarEmail = (email) => {
 
 // Validar contraseña (mínimo 6 caracteres)
 export const validarPassword = (password) => {
-  if (!password || password.length < 8) {
+  if (!password || password.length < 6) {
     return { valido: false, mensaje: "La contraseña debe tener al menos 6 caracteres" };
   }
   return { valido: true };

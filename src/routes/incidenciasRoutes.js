@@ -10,10 +10,10 @@ import {
 
 const router = express.Router();
 
-// Rutas públicas
-router.get("/", obtenerIncidencias);
-router.get("/:id", obtenerIncidenciaPorId);
-router.get("/aula/:aula_id", obtenerIncidenciasAula);
+// Rutas públicas (ORDEN CRÍTICO)
+router.get("/aula/:aula_id", obtenerIncidenciasAula);    // Específica 1
+router.get("/", obtenerIncidencias);                      // Genérica (ANTES de /:id)
+router.get("/:id", obtenerIncidenciaPorId);               // Específica 2
 
 // Rutas protegidas
 router.post("/", verificarToken, crearIncidencia);
@@ -25,3 +25,4 @@ router.patch(
 );
 
 export default router;
+
