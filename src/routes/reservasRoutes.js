@@ -6,12 +6,14 @@ import {
   obtenerMisReservas,
   cancelarReserva,
   obtenerReservaPorId,
+  obtenerDisponibilidad,
 } from "../controllers/reservasController.js";
 
 const router = express.Router();
 
 // Rutas públicas (ORDEN CRÍTICO)
 router.get("/usuario/mis-reservas", verificarToken, obtenerMisReservas);  // Específica
+router.get("/disponibilidad", obtenerDisponibilidad);                      // Disponibilidad (ANTES de :id)
 router.get("/", obtenerReservas);                                           // Genérica (ANTES)
 router.get("/:id", obtenerReservaPorId);                                    // Específica
 

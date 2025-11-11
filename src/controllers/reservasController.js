@@ -135,3 +135,51 @@ export const obtenerReservaPorId = async (req, res) => {
       .json({ mensaje: "Error en el servidor", error: error.message });
   }
 };
+
+// Obtener disponibilidad de un aula en una fecha
+export const obtenerDisponibilidad = async (req, res) => {
+  try {
+    const { aula_id, fecha } = req.query;
+
+    // Validar parámetros
+    if (!aula_id || !fecha) {
+      return res.status(400).json({
+        mensaje: "Parámetros requeridos: aula_id y fecha (YYYY-MM-DD)"
+      });
+    }
+
+    // Validar que aula_id sea número
+    if (isNaN(aula_id)) {
+      return res.status(400).json({
+        mensaje: "aula_id debe ser un número"
+      });
+    }
+
+    // Importar validaciones de festivos
+    const { validarFechaReserva } = await import("../utils/festivos.js");
+
+    // Validar fecha (no pasada, no domingo, no festivo)
+    const validacion = await validarFechaReserva(fecha);
+    if (!validacion.valido) {
+      return res.status(400).json({
+        mensaje: validacion.mensaje
+      });
+    }
+
+    // Obtener disponibilidad
+    const disponibilidad = await Reserva.obtenerDisponibilidad(
+      parseInt(aula_id),
+      fecha
+    );
+
+    res.json({
+      mensaje: "✅ Disponibilidad obtenida correctamente",
+      disponibilidad
+    });
+  } catch (error) {
+    console.error("Error en obtenerDisponibilidad:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
