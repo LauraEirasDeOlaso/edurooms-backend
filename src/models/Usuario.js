@@ -73,4 +73,81 @@ export class Usuario {
       throw new Error(`Error al verificar contraseña: ${error.message}`);
     }
   }
+
+  // ============================================
+  // NUEVO: Actualizar usuario (rol, estado, etc)
+  // ============================================
+  static async actualizar(id, datos) {
+    try {
+      // Construir dinámicamente la query según qué se actualiza
+      const actualizaciones = [];
+      const valores = [];
+
+      if (datos.rol) {
+        actualizaciones.push("rol = ?");
+        valores.push(datos.rol);
+      }
+
+      if (datos.estado) {
+        actualizaciones.push("estado = ?");
+        valores.push(datos.estado);
+      }
+
+      if (actualizaciones.length === 0) {
+        throw new Error("No hay datos para actualizar");
+      }
+
+      valores.push(id); // Agregar ID al final para WHERE
+
+      const query = `UPDATE usuarios SET ${actualizaciones.join(", ")} WHERE id = ?`;
+
+      const [result] = await pool.query(query, valores);
+
+      if (result.affectedRows === 0) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      // Retornar usuario actualizado
+      return await this.buscarPorId(id);
+    } catch (error) {
+      throw new Error(`Error al actualizar usuario: ${error.message}`);
+    }
+  }
+
+  // ============================================
+  // NUEVO: Eliminar usuario
+  // ============================================
+  static async eliminar(id) {
+    try {
+      const [result] = await pool.query("DELETE FROM usuarios WHERE id = ?", [
+        id,
+      ]);
+
+      return result.affectedRows > 0;
+    } catch (error) {
+      throw new Error(`Error al eliminar usuario: ${error.message}`);
+    }
+  }
+  // ============================================
+  // NUEVO: Cambiar contraseña del usuario
+  // ============================================
+  static async cambiarPassword(id, nuevaPassword) {
+    try {
+      // Hashear la nueva contraseña
+      const passwordHash = await bcrypt.hash(nuevaPassword, 10);
+
+      const [result] = await pool.query(
+        "UPDATE usuarios SET password = ?, primera_vez_login = FALSE WHERE id = ?",
+        [passwordHash, id]
+      );
+
+      if (result.affectedRows === 0) {
+        throw new Error("Usuario no encontrado");
+      }
+
+      return true;
+    } catch (error) {
+      throw new Error(`Error al cambiar contraseña: ${error.message}`);
+    }
+  }
 }
