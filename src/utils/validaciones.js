@@ -4,10 +4,16 @@ export const validarEmail = (email) => {
   return regex.test(email);
 };
 
-// Validar contraseña (mínimo 6 caracteres)
+// Validar contraseña (mínimo 8 caracteres)
 export const validarPassword = (password) => {
-  if (!password || password.length < 6) {
-    return { valido: false, mensaje: "La contraseña debe tener al menos 6 caracteres" };
+  // Validación mejorada: mayúscula, minúscula, número y carácter especial
+  const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%!&*]).{8,}$/;
+
+  if (!password || !regex.test(password)) {
+   return { 
+      valido: false, 
+      mensaje: "La contraseña debe tener: +8 caracteres, mayúscula, minúscula y número y carácter especial (@#$%!&*)" 
+    };
   }
   return { valido: true };
 };
