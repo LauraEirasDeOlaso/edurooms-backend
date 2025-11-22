@@ -7,6 +7,7 @@ import { initializeDatabase } from "../scripts/initDB.js";
 import aulasRoutes from "./routes/aulasRoutes.js";
 import reservasRoutes from "./routes/reservasRoutes.js";
 import incidenciasRoutes from "./routes/incidenciasRoutes.js";
+import usuariosRoutes from "./routes/usuariosRoutes.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/aulas", aulasRoutes);
 app.use("/api/reservas", reservasRoutes);
 app.use("/api/incidencias", incidenciasRoutes);
+app.use("/api/usuarios", usuariosRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", database: "connected" });
