@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import { initializeDatabase } from "../scripts/initDB.js";
 import aulasRoutes from "./routes/aulasRoutes.js";
 import reservasRoutes from "./routes/reservasRoutes.js";
 import incidenciasRoutes from "./routes/incidenciasRoutes.js";
@@ -28,6 +29,15 @@ app.use("/api/incidencias", incidenciasRoutes);
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", database: "connected" });
 });
+
+// ============================================
+// NUEVO: Inicializar base de datos automáticamente
+// ============================================
+try {
+  await initializeDatabase();
+} catch (error) {
+  console.warn("⚠️  initializeDatabase ya ejecutado o error:", error.message);
+}
 
 // Conectar a BD
 await connectDB();

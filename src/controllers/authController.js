@@ -8,7 +8,8 @@ dotenv.config();
 // Registrar nuevo usuario
 export const registro = async (req, res) => {
   try {
-    const { nombre, email, password, confirmarPassword, rol } = req.body;
+    // CAMBIO: Se elimina 'rol' porque no se acepta del cliente
+    const { nombre, email, password, confirmarPassword } = req.body;
 
     // ✅ Usar el validator
     const validacion = validarRegistro({
@@ -16,7 +17,7 @@ export const registro = async (req, res) => {
       email,
       password,
       confirmarPassword,
-      rol
+      // CAMBIO: Se elimina 'rol' porque no se recibe
     });
 
     if (!validacion.valido) {
@@ -30,11 +31,12 @@ export const registro = async (req, res) => {
     }
 
     // Crear usuario
+    // CAMBIO: El registro SIEMPRE crea profesores, no recibe rol del cliente
     const nuevoUsuario = await Usuario.crear(
         nombre, 
         email, 
         password,
-        rol || "profesor"
+        "profesor" // ← SIEMPRE es profesor, sin opción de elegir
     );
 
     // Crear token JWT

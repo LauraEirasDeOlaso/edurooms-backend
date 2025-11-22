@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   rol ENUM('profesor', 'administrador') DEFAULT 'profesor',
+   -- NUEVOS CAMPOS: gestión de usuarios y contraseñas temporales
+  primera_vez_login BOOLEAN DEFAULT TRUE,
+  estado ENUM('habilitado', 'deshabilitado') DEFAULT 'habilitado',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -67,22 +70,6 @@ CREATE TABLE IF NOT EXISTS incidencias (
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
--- ============================================
--- DATOS DE PRUEBA 
--- ============================================
-
--- Insertar usuario admin de prueba
-INSERT INTO usuarios (nombre, email, password, rol) 
-VALUES ('Admin EduRooms', 'admin@edurooms.com', 'hash_bcrypt_aqui', 'administrador')
-ON DUPLICATE KEY UPDATE id=id;
-
--- Insertar aulas de prueba
-INSERT INTO aulas (nombre, capacidad, ubicacion, codigo_qr) 
-VALUES 
-  ('Aula 101', 30, 'Planta 1', 'AULA_101_QR'),
-  ('Aula 102', 25, 'Planta 1', 'AULA_102_QR'),
-  ('Aula 201', 40, 'Planta 2', 'AULA_201_QR')
-ON DUPLICATE KEY UPDATE id=id;
 
 
 -- ============================================
