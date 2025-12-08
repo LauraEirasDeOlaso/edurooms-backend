@@ -1,5 +1,5 @@
 import express from "express";
-import { verificarToken } from "../middleware/auth.js";
+import { verificarToken, verificarRol } from "../middleware/auth.js";
 import {
   crearReserva,
   obtenerReservas,
@@ -7,6 +7,7 @@ import {
   cancelarReserva,
   obtenerReservaPorId,
   obtenerDisponibilidad,
+  traspasoReserva,
 } from "../controllers/reservasController.js";
 
 const router = express.Router();
@@ -20,5 +21,8 @@ router.get("/:id", obtenerReservaPorId);                                    // E
 // Rutas protegidas
 router.post("/", verificarToken, crearReserva);
 router.delete("/:id", verificarToken, cancelarReserva);
+
+// NUEVO: Traspasar reserva a otra aula (solo admin)
+router.put("/:id/traspasar", verificarToken, verificarRol(["administrador"]), traspasoReserva);
 
 export default router;

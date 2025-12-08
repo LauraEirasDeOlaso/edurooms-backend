@@ -18,6 +18,7 @@ export const crearReserva = async (req, res) => {
     if (!validacion.valido) {
       return res.status(400).json({ mensaje: validacion.mensaje });
     }
+    
 
     // Verificar solapamiento de horarios
     const hay_solapamiento = await Reserva.verificarSolapamiento(
@@ -178,6 +179,57 @@ export const obtenerDisponibilidad = async (req, res) => {
     });
   } catch (error) {
     console.error("Error en obtenerDisponibilidad:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
+
+// ============================================
+// NUEVO: Traspasar reserva a otra aula (solo admin)
+// ============================================
+export const traspasoReserva = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { aula_id } = req.body;
+
+    // Validar que la reserva existe
+    const reserva = await Reserva.obtenerPorId(id);
+    if (!reserva) {
+      return res.status(404).json({ mensaje: "Reserva no encontrada" });
+    }
+
+    // Validar que la nueva aula_id se proporciona
+    if (!aula_id || aula_id === reserva.aula_id) {
+      return res.status(400).json({ 
+        mensaje: "Debe proporcionar una aula_id diferente a la actual" 
+      });
+    }
+
+    // NUEVO: Verificar que NO hay solapamiento en la nueva aula
+    const hay_solapamiento = await Reserva.verificarSolapamiento(
+      aula_id,
+      reserva.fecha,
+      reserva.hora_inicio,
+      reserva.hora_fin,
+      id  // Excluir esta reserva del chequeo
+    );
+
+    if (hay_solapamiento) {
+      return res.status(400).json({
+        mensaje: "❌ La nueva aula tiene una reserva en ese horario. Elige otra aula u horario"
+      });
+    }
+
+    // NUEVO: Traspasar la reserva
+    const reservaTraspasada = await Reserva.traspasar(id, aula_id);
+
+    res.json({
+      mensaje: "✅ Reserva traspasada correctamente",
+      reserva: reservaTraspasada
+    });
+  } catch (error) {
+    console.error("Error en traspasoReserva:", error);
     res
       .status(500)
       .json({ mensaje: "Error en el servidor", error: error.message });

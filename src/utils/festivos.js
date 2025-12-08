@@ -52,9 +52,32 @@ export const obtenerFestivosValencia = async (año) => {
   }
 };
 
+const feriadosLocales = {
+  2025: [
+    "2025-01-01", // Año Nuevo
+    "2025-01-06", // Reyes
+    "2025-03-19", // San José
+    "2025-04-18", // Viernes Santo
+    "2025-05-01", // Día Trabajo
+    "2025-08-15", // Asunción
+    "2025-10-12", // Hispanidad
+    "2025-11-01", // Todos los Santos
+    "2025-12-06", // Constitución
+    "2025-12-08", // Inmaculada ← AGREGADO
+    "2025-12-25", // Navidad
+  ]
+};
+
 export const esFestivo = async (fecha) => {
   try {
     const año = new Date(fecha).getFullYear();
+
+    // Primero chequear locales
+    if (feriadosLocales[año] && feriadosLocales[año].includes(fecha)) {
+      return true;
+    }
+
+    // Luego chequear iCal
     const festivos = await obtenerFestivosValencia(año);
     return festivos.includes(fecha);
   } catch (error) {
@@ -63,9 +86,10 @@ export const esFestivo = async (fecha) => {
   }
 };
 
-export const esDomingo = (fecha) => {
+export const esSabadoODomingo = (fecha) => {
   const date = new Date(fecha);
-  return date.getDay() === 0;
+  const dia = date.getDay();
+  return dia === 0 || dia === 6; // 0 = domingo, 6 = sábado
 };
 
 export const validarFechaReserva = async (fecha) => {
@@ -82,8 +106,8 @@ export const validarFechaReserva = async (fecha) => {
       return { valido: false, mensaje: "No puedes reservar en fechas pasadas" };
     }
 
-    if (esDomingo(fecha)) {
-      return { valido: false, mensaje: "No se puede reservar en domingo" };
+    if (esSabadoODomingo(fecha)) {
+      return { valido: false, mensaje: "No se puede reservar en sábado ni domingo" };
     }
 
     const festivo = await esFestivo(fecha);
@@ -101,6 +125,6 @@ export const validarFechaReserva = async (fecha) => {
 export default {
   obtenerFestivosValencia,
   esFestivo,
-  esDomingo,
+  esSabadoODomingo,
   validarFechaReserva
 };

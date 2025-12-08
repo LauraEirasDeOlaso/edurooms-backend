@@ -52,7 +52,9 @@ export class Reserva {
       );
       return rows;
     } catch (error) {
-      throw new Error(`Error al obtener reservas del usuario: ${error.message}`);
+      throw new Error(
+        `Error al obtener reservas del usuario: ${error.message}`
+      );
     }
   }
 
@@ -139,11 +141,11 @@ export class Reserva {
     }
   }
 
-   // Obtener disponibilidad de un aula en una fecha
+  // Obtener disponibilidad de un aula en una fecha
   static async obtenerDisponibilidad(aula_id, fecha) {
     try {
       // Generar horarios de funcionamiento: 8:00 a 21:00, intervalos de 1.5 horas
-      const horarios = this.generarHorarios();
+      const horarios = this.generarHorarios(fecha);
 
       // Obtener reservas confirmadas de esa aula en esa fecha
       const reservas = await this.obtenerPorAulaYFecha(aula_id, fecha);
@@ -158,8 +160,7 @@ export class Reserva {
         // Verificar si este horario se superpone con alguna reserva
         const ocupado = reservas.some((reserva) => {
           return (
-            hora_inicio < reserva.hora_fin &&
-            hora_fin > reserva.hora_inicio
+            hora_inicio < reserva.hora_fin && hora_fin > reserva.hora_inicio
           );
         });
 
@@ -184,13 +185,26 @@ export class Reserva {
   }
 
   // Generar array de horarios disponibles (8:00 a 21:00, intervalos de 1.5 horas)
-  static generarHorarios() {
+  static generarHorarios(fecha = null) {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const fechaReserva = fecha ? new Date(fecha + "T00:00:00") : hoy;
+    const esHoy = fechaReserva.getTime() === hoy.getTime();
+
     const horarios = [];
     let horaActual = new Date();
     horaActual.setHours(8, 0, 0, 0); // Empezar a las 8:00
 
     const horaFinal = new Date();
     horaFinal.setHours(21, 0, 0, 0); // Terminar a las 21:00
+
+    // Si es hoy, empieza desde hora actual + 1 hora
+  if (esHoy) {
+    const ahora = new Date();
+    ahora.setHours(ahora.getHours() + 1, 0, 0);
+    if (ahora > horaFinal) return horarios; // Ya pasó el horario
+    horaActual = ahora;
+  }
 
     while (horaActual < horaFinal) {
       const hora_inicio = this.formatoHora(horaActual);
@@ -214,8 +228,29 @@ export class Reserva {
 
   // Formatear hora a HH:MM
   static formatoHora(date) {
-    const horas = String(date.getHours()).padStart(2, '0');
-    const minutos = String(date.getMinutes()).padStart(2, '0');
+    const horas = String(date.getHours()).padStart(2, "0");
+    const minutos = String(date.getMinutes()).padStart(2, "0");
     return `${horas}:${minutos}`;
+  }
+
+  // ============================================
+  // NUEVO: Traspasar reserva a otra aula
+  // ============================================
+  static async traspasar(id, nuevaAulaId) {
+    try {
+      const [result] = await pool.query(
+        "UPDATE reservas SET aula_id = ? WHERE id = ?",
+        [nuevaAulaId, id]
+      );
+
+      if (result.affectedRows === 0) {
+        throw new Error("Reserva no encontrada");
+      }
+
+      // Retornar la reserva actualizada
+      return await this.obtenerPorId(id);
+    } catch (error) {
+      throw new Error(`Error al traspasar reserva: ${error.message}`);
+    }
   }
 }
