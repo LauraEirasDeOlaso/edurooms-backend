@@ -22,12 +22,13 @@ export const obtenerTodos = async (req, res) => {
   }
 };
 
+
 // ============================================
 // POST: Crear nuevo usuario (solo admin)
 // ============================================
 export const crearUsuario = async (req, res) => {
   try {
-    const { nombre, email } = req.body;
+    const { nombre, email, departamento } = req.body;
 
     // Validar nombre
     const validacionNombre = validarString(nombre, "Nombre");
@@ -61,7 +62,8 @@ export const crearUsuario = async (req, res) => {
       nombre,
       email,
       passwordTemporal,
-      "profesor"
+      "profesor",
+      departamento
     );
 
     res.status(201).json({
@@ -71,6 +73,7 @@ export const crearUsuario = async (req, res) => {
         nombre: nuevoUsuario.nombre,
         email: nuevoUsuario.email,
         rol: nuevoUsuario.rol,
+        departamento: nuevoUsuario.departamento,
       },
       // NUEVO: Mostrar contraseña temporal al admin
       passwordTemporal:
@@ -90,7 +93,7 @@ export const crearUsuario = async (req, res) => {
 export const editarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
-    const { rol, estado } = req.body;
+    const { rol, estado, departamento } = req.body;
 
     // Verificar que el usuario existe
     const usuario = await Usuario.buscarPorId(id);
@@ -144,13 +147,16 @@ export const eliminarUsuario = async (req, res) => {
 
     // NUEVO: Verificar si el usuario tiene reservas confirmadas
     const reservas = await Reserva.obtenerPorUsuario(id);
-    const reservasConfirmadas = reservas.filter(r => r.estado === 'confirmada');
+    const reservasConfirmadas = reservas.filter(
+      (r) => r.estado === "confirmada"
+    );
 
     if (reservasConfirmadas.length > 0) {
       return res.status(400).json({
         mensaje: `❌ No se puede eliminar el usuario. Tiene ${reservasConfirmadas.length} reserva(s) confirmada(s)`,
         reservas: reservasConfirmadas,
-        instrucciones: "El admin debe cancelar o traspasar estas reservas antes de eliminar el usuario"
+        instrucciones:
+          "El admin debe cancelar o traspasar estas reservas antes de eliminar el usuario",
       });
     }
 
@@ -201,7 +207,7 @@ const generarPasswordTemporal = () => {
 export const cambiarPassword = async (req, res) => {
   try {
     const { id } = req.params;
-    const { passwordActual, passwordNueva, passwordNuevaConfirmar } = req.body;
+    const { passwordActual, passwordNueva, passwordNuevaConfirmar, esPrimeraVez } = req.body;
 
     // Validar que el usuario existe
     const usuario = await Usuario.buscarPorId(id);
@@ -224,11 +230,9 @@ export const cambiarPassword = async (req, res) => {
     }
 
     // NUEVO: Si el usuario NO es admin, debe verificar contraseña actual
-    if (req.usuario.rol !== "administrador") {
+    if (req.usuario.rol !== "administrador" && !esPrimeraVez) {
       if (!passwordActual) {
-        return res
-          .status(400)
-          .json({ mensaje: "Contraseña actual requerida" });
+        return res.status(400).json({ mensaje: "Contraseña actual requerida" });
       }
 
       // Obtener usuario completo (con password hash)
@@ -243,12 +247,14 @@ export const cambiarPassword = async (req, res) => {
       );
 
       if (!passwordValida) {
-        return res.status(401).json({ mensaje: "Contraseña actual incorrecta" });
+        return res
+          .status(401)
+          .json({ mensaje: "Contraseña actual incorrecta" });
       }
     }
 
     // NUEVO: Cambiar contraseña
-    await Usuario.cambiarPassword(id, passwordNueva);
+    await Usuario.cambiarPassword(id, passwordNuevaConfirmar);
 
     res.json({
       mensaje: "✅ Contraseña cambiada correctamente",
@@ -260,6 +266,61 @@ export const cambiarPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("Error cambiando contraseña:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
+
+export const validarEmailExiste = async (req, res) => {
+  try {
+    const { email } = req.params;
+
+    // Usar validaciones.js
+    if (!validarEmail(email)) {
+      return res.status(400).json({ error: "Formato de email inválido" });
+    }
+
+    const [usuarios] = await pool.query(
+      "SELECT id FROM usuarios WHERE email = ?",
+      [email]
+    );
+
+    if (usuarios.length > 0) {
+      return res.json({ existe: true });
+    } else {
+      return res.json({ existe: false });
+    }
+  } catch (error) {
+    console.error("Error en validarEmailExiste:", error);
+    res.status(500).json({ error: "Error validando email" });
+  }
+};
+
+// ============================================
+// GET: Obtener usuario por ID (solo admin)
+// ============================================
+export const obtenerPorId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const usuario = await Usuario.buscarPorId(id);
+    if (!usuario) {
+      return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    // Obtener datos completos incluyendo departamento
+    const [rows] = await pool.query(
+      "SELECT id, nombre, email, rol, departamento, estado FROM usuarios WHERE id = ?",
+      [id]
+    );
+
+    res.json({
+      mensaje: "✅ Usuario obtenido correctamente",
+      usuario: rows[0],
+    });
+  } catch (error) {
+    console.error("Error obteniendo usuario:", error);
     res
       .status(500)
       .json({ mensaje: "Error en el servidor", error: error.message });

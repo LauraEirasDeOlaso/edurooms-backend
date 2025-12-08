@@ -2,10 +2,12 @@ import express from "express";
 import { verificarToken, verificarRol } from "../middleware/auth.js";
 import {
   obtenerTodos,
+  obtenerPorId,
   crearUsuario,
   editarUsuario,
   eliminarUsuario,
   cambiarPassword,
+  validarEmailExiste,
 } from "../controllers/usuariosController.js";
 
 const router = express.Router();
@@ -33,10 +35,17 @@ router.delete(
 );
 
 // PUT: Cambiar contraseña
-router.put(
-  "/:id/cambiar-password",
+router.put("/:id/cambiar-password", verificarToken, cambiarPassword);
+
+// GET: Validar si un email existe (PÚBLICO - solo para recuperar contraseña)
+router.get("/existe/:email", validarEmailExiste);
+
+// GET: Obtener usuario por ID (solo admin)
+router.get(
+  "/:id",
   verificarToken,
-  cambiarPassword
+  verificarRol(["administrador"]),
+  obtenerPorId
 );
 
 export default router;

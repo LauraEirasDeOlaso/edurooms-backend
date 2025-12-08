@@ -77,6 +77,11 @@ export const login = async (req, res) => {
       return res.status(401).json({ mensaje: "Credenciales inválidas" });
     }
 
+    // Validar que esté habilitado
+    if (usuario.estado === "deshabilitado") {
+      return res.status(401).json({ mensaje: "Usuario deshabilitado. Contacta al administrador." });
+    }
+
     // Verificar contraseña
     const passwordValida = await Usuario.verificarPassword(
       password,
@@ -101,6 +106,7 @@ export const login = async (req, res) => {
         nombre: usuario.nombre,
         email: usuario.email,
         rol: usuario.rol,
+        primera_vez_login: usuario.primera_vez_login === 1 ? true : false
       },
       token,
     });

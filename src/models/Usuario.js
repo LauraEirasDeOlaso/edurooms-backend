@@ -3,14 +3,14 @@ import bcrypt from "bcryptjs";
 
 export class Usuario {
   // Crear nuevo usuario
-  static async crear(nombre, email, password, rol = "profesor") {
+  static async crear(nombre, email, password, rol = "profesor", departamento = null) {
     try {
       // Hashear contraseña
       const passwordHash = await bcrypt.hash(password, 10);
 
       const [result] = await pool.query(
-        "INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)",
-        [nombre, email, passwordHash, rol]
+        "INSERT INTO usuarios (nombre, email, password, rol, departamento) VALUES (?, ?, ?, ?, ?)",
+        [nombre, email, passwordHash, rol, departamento]
       );
 
       return {
@@ -18,6 +18,7 @@ export class Usuario {
         nombre,
         email,
         rol,
+        departamento,
       };
     } catch (error) {
       throw new Error(`Error al crear usuario: ${error.message}`);
@@ -56,7 +57,7 @@ export class Usuario {
   static async obtenerTodos() {
     try {
       const [rows] = await pool.query(
-        "SELECT id, nombre, email, rol, created_at FROM usuarios"
+        "SELECT id, nombre, email, rol, estado, departamento, created_at FROM usuarios"
       );
 
       return rows;
@@ -91,6 +92,11 @@ export class Usuario {
       if (datos.estado) {
         actualizaciones.push("estado = ?");
         valores.push(datos.estado);
+      }
+
+      if (datos.departamento) {
+        actualizaciones.push("departamento = ?");
+        valores.push(datos.departamento);
       }
 
       if (actualizaciones.length === 0) {

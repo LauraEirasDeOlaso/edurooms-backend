@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
   rol ENUM('profesor', 'administrador') DEFAULT 'profesor',
+  departamento VARCHAR(100) DEFAULT NULL,
    -- NUEVOS CAMPOS: gestión de usuarios y contraseñas temporales
   primera_vez_login BOOLEAN DEFAULT TRUE,
   estado ENUM('habilitado', 'deshabilitado') DEFAULT 'habilitado',
