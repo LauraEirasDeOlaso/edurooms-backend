@@ -83,7 +83,7 @@ export class Reserva {
     try {
       let query = `SELECT * FROM reservas 
                    WHERE aula_id = ? 
-                   AND fecha = ? 
+                   AND DATE(fecha) = ? 
                    AND estado = 'confirmada'
                    AND ((hora_inicio < ? AND hora_fin > ?)
                         OR (hora_inicio < ? AND hora_fin > ?))`;
@@ -108,6 +108,32 @@ export class Reserva {
       throw new Error(`Error verificando solapamiento: ${error.message}`);
     }
   }
+
+  // Verificar solapamiento por USUARIO (no por aula)
+static async verificarSolapamientoUsuario(usuario_id, fecha, hora_inicio, hora_fin) {
+  try {
+    const query = `SELECT * FROM reservas 
+                   WHERE usuario_id = ? 
+                   AND DATE(fecha) = ? 
+                   AND estado = 'confirmada'
+                   AND ((hora_inicio < ? AND hora_fin > ?)
+                        OR (hora_inicio < ? AND hora_fin > ?))`;
+
+    const params = [
+      usuario_id,
+      fecha,
+      hora_fin,
+      hora_inicio,
+      hora_fin,
+      hora_inicio,
+    ];
+
+    const [rows] = await pool.query(query, params);
+    return rows.length > 0; // true si hay solapamiento
+  } catch (error) {
+    throw new Error(`Error verificando solapamiento de usuario: ${error.message}`);
+  }
+}
 
   // Cancelar reserva
   static async cancelar(id) {
@@ -188,7 +214,12 @@ export class Reserva {
   static generarHorarios(fecha = null) {
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
-    const fechaReserva = fecha ? new Date(fecha + "T00:00:00") : hoy;
+    // ← CAMBIAR ESTO
+    let fechaReserva = hoy;
+    if (fecha) {
+      const [year, month, day] = fecha.split("-");
+      fechaReserva = new Date(year, parseInt(month) - 1, day);
+    }
     const esHoy = fechaReserva.getTime() === hoy.getTime();
 
     const horarios = [];

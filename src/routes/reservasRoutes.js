@@ -8,7 +8,10 @@ import {
   obtenerReservaPorId,
   obtenerDisponibilidad,
   traspasoReserva,
+  obtenerReservasPorUsuario,
+  obtenerTodasReservas,
 } from "../controllers/reservasController.js";
+
 
 const router = express.Router();
 
@@ -18,9 +21,13 @@ router.get("/disponibilidad", obtenerDisponibilidad);                      // Di
 router.get("/", obtenerReservas);                                           // Genérica (ANTES)
 router.get("/:id", obtenerReservaPorId);                                    // Específica
 
+
+
 // Rutas protegidas
 router.post("/", verificarToken, crearReserva);
 router.delete("/:id", verificarToken, cancelarReserva);
+router.get("/usuario/:usuario_id", verificarToken, verificarRol(["administrador"]), obtenerReservasPorUsuario);
+router.get("/admin/todas", verificarToken, verificarRol(["administrador"]), obtenerTodasReservas);
 
 // NUEVO: Traspasar reserva a otra aula (solo admin)
 router.put("/:id/traspasar", verificarToken, verificarRol(["administrador"]), traspasoReserva);

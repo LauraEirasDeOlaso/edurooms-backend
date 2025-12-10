@@ -8,7 +8,10 @@ import {
   eliminarUsuario,
   cambiarPassword,
   validarEmailExiste,
+  subirFotoPerfil,
+  obtenerFotoPerfil,
 } from "../controllers/usuariosController.js";
+import { upload } from "../config/multer.js";
 
 const router = express.Router();
 
@@ -47,5 +50,14 @@ router.get(
   verificarRol(["administrador"]),
   obtenerPorId
 );
+
+router.put(
+  "/:id/foto-perfil",
+  verificarToken,
+  upload.single("foto"),
+  subirFotoPerfil
+);
+
+router.get("/:id/foto-perfil", obtenerFotoPerfil);
 
 export default router;

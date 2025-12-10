@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
   password VARCHAR(255) NOT NULL,
   rol ENUM('profesor', 'administrador') DEFAULT 'profesor',
   departamento VARCHAR(100) DEFAULT NULL,
+  foto_ruta VARCHAR(255) NULL,
    -- NUEVOS CAMPOS: gestión de usuarios y contraseñas temporales
   primera_vez_login BOOLEAN DEFAULT TRUE,
   estado ENUM('habilitado', 'deshabilitado') DEFAULT 'habilitado',
@@ -28,7 +29,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
 -- ============================================
 CREATE TABLE IF NOT EXISTS aulas (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  nombre VARCHAR(100) NOT NULL,
+  nombre VARCHAR(100) UNIQUE NOT NULL,
   capacidad INT NOT NULL,
   ubicacion VARCHAR(200),
   codigo_qr VARCHAR(255) UNIQUE,

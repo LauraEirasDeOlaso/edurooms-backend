@@ -22,7 +22,6 @@ export const obtenerTodos = async (req, res) => {
   }
 };
 
-
 // ============================================
 // POST: Crear nuevo usuario (solo admin)
 // ============================================
@@ -154,13 +153,10 @@ export const eliminarUsuario = async (req, res) => {
     if (reservasConfirmadas.length > 0) {
       return res.status(400).json({
         mensaje: `❌ No se puede eliminar el usuario. Tiene ${reservasConfirmadas.length} reserva(s) confirmada(s)`,
-        reservas: reservasConfirmadas,
-        instrucciones:
-          "El admin debe cancelar o traspasar estas reservas antes de eliminar el usuario",
       });
     }
 
-    // NUEVO: Eliminar usuario, si no hay reservas
+    // NUEVO: Eliminar usuario.
     await Usuario.eliminar(id);
 
     res.json({
@@ -207,7 +203,12 @@ const generarPasswordTemporal = () => {
 export const cambiarPassword = async (req, res) => {
   try {
     const { id } = req.params;
-    const { passwordActual, passwordNueva, passwordNuevaConfirmar, esPrimeraVez } = req.body;
+    const {
+      passwordActual,
+      passwordNueva,
+      passwordNuevaConfirmar,
+      esPrimeraVez,
+    } = req.body;
 
     // Validar que el usuario existe
     const usuario = await Usuario.buscarPorId(id);
@@ -250,6 +251,12 @@ export const cambiarPassword = async (req, res) => {
         return res
           .status(401)
           .json({ mensaje: "Contraseña actual incorrecta" });
+      }
+      // después de verificar que la contraseña actual es correcta
+      if (passwordActual === passwordNueva) {
+        return res.status(400).json({
+          mensaje: "La nueva contraseña debe ser diferente a la actual",
+        });
       }
     }
 
@@ -321,6 +328,72 @@ export const obtenerPorId = async (req, res) => {
     });
   } catch (error) {
     console.error("Error obteniendo usuario:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+
+};
+
+// ============================================
+// PUT: Subir foto de perfil
+// ============================================
+export const subirFotoPerfil = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar que el usuario existe
+    const usuario = await Usuario.buscarPorId(id);
+    if (!usuario) {
+      return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    // Verificar que hay archivo
+    if (!req.file) {
+      return res.status(400).json({ mensaje: "No se envió archivo" });
+    }
+
+    // Guardar ruta en BD
+    const fotoRuta = `uploads/${req.file.filename}`;
+    await pool.query(
+      "UPDATE usuarios SET foto_ruta = ? WHERE id = ?",
+      [fotoRuta, id]
+    );
+
+    res.json({
+      mensaje: "✅ Foto de perfil actualizada",
+      foto_ruta: fotoRuta,
+    });
+  } catch (error) {
+    console.error("Error subiendo foto:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};
+
+// ============================================
+// GET: Obtener foto de perfil
+// ============================================
+export const obtenerFotoPerfil = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // ← CAMBIAR ESTO (Usuario.buscarPorId no trae foto_ruta)
+    const [rows] = await pool.query(
+      "SELECT foto_ruta FROM usuarios WHERE id = ?",
+      [id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    res.json({
+      foto_ruta: rows[0].foto_ruta || null,
+    });
+  } catch (error) {
+    console.error("Error obteniendo foto:", error);
     res
       .status(500)
       .json({ mensaje: "Error en el servidor", error: error.message });
