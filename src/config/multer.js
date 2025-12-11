@@ -6,12 +6,17 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const uploadsDir = path.join(__dirname, "../../uploads");
+// ← USAR RUTA ABSOLUTA DEL VOLUMEN
+const uploadsDir = "/app/uploads";
 
-// ← CREAR CARPETA SI NO EXISTE
+// CREAR CARPETA SI NO EXISTE
 if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-  console.log("✅ Carpeta uploads creada");
+  try {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+    console.log("✅ Carpeta uploads creada en:", uploadsDir);
+  } catch (error) {
+    console.error("❌ Error creando carpeta:", error.message);
+  }
 }
 
 const storage = multer.diskStorage({
