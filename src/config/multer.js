@@ -6,8 +6,7 @@ import fs from "fs";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ← USAR RUTA ABSOLUTA DEL VOLUMEN
-const uploadsDir = "/app/uploads";
+const uploadsDir = path.join(__dirname, "../../uploads");
 
 // CREAR CARPETA SI NO EXISTE
 if (!fs.existsSync(uploadsDir)) {
@@ -21,7 +20,7 @@ if (!fs.existsSync(uploadsDir)) {
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);  // ← CAMBIAR
+    cb(null, uploadsDir);
   },
   filename: (req, file, cb) => {
     const userId = req.usuario.id;
