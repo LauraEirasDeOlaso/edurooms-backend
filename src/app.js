@@ -11,7 +11,11 @@ import usuariosRoutes from "./routes/usuariosRoutes.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-dotenv.config();
+// Solo cargar .env en desarrollo
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config();
+}
+
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
