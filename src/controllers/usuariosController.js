@@ -74,9 +74,9 @@ export const crearUsuario = async (req, res) => {
         rol: nuevoUsuario.rol,
         departamento: nuevoUsuario.departamento,
       },
-      // NUEVO: Mostrar contraseña temporal al admin
-      passwordTemporal:
-        passwordTemporal + " (⚠️ Comunica esto al usuario de forma segura)",
+      // NUEVO: Mostrar contraseña temporal al admin/separando valores
+      passwordTemporal: passwordTemporal,  // ← Solo la contraseña
+      aviso: "⚠️ Comunica esto al usuario de forma segura", // Aviso aparte
     });
   } catch (error) {
     console.error("Error creando usuario:", error);
