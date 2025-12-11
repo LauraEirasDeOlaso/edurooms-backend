@@ -1,11 +1,18 @@
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const uploadsDir = path.join(__dirname, "../../uploads");
+
+// ← CREAR CARPETA SI NO EXISTE
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+  console.log("✅ Carpeta uploads creada");
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
