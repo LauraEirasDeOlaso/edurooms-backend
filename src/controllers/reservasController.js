@@ -7,6 +7,14 @@ export const crearReserva = async (req, res) => {
   try {
     const { usuario_id, aula_id, fecha, hora_inicio, hora_fin } = req.body;
 
+     console.log(`📝 [CREATE] Intentando crear reserva:`, {
+      usuario_id,
+      aula_id,
+      fecha,
+      hora_inicio,
+      hora_fin,
+    });
+
     // Asegurar que fecha es YYYY-MM-DD sin UTC
     // Validar que sea string en formato correcto
     if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) {
@@ -36,6 +44,8 @@ export const crearReserva = async (req, res) => {
       hora_fin
     );
 
+    console.log(`📝 [CREATE] ¿Hay solapamiento en aula? ${hay_solapamiento}`);
+
     if (hay_solapamiento) {
       return res.status(400).json({
         mensaje: "Ya existe una reserva en ese horario para esta aula",
@@ -49,6 +59,8 @@ export const crearReserva = async (req, res) => {
       hora_inicio,
       hora_fin
     );
+
+     console.log(`📝 [CREATE] ¿Hay solapamiento en usuario? ${hay_solapamiento_usuario}`);
 
     if (hay_solapamiento_usuario) {
       return res.status(400).json({
@@ -94,6 +106,8 @@ export const obtenerReservas = async (req, res) => {
 export const obtenerMisReservas = async (req, res) => {
   try {
     const usuario_id = req.usuario.id;
+    // Marcar como completadas las pasadas
+    await Reserva.actualizarReservasCompletadas(usuario_id);
     const reservas = await Reserva.obtenerPorUsuario(usuario_id);
     res.json(reservas);
   } catch (error) {
@@ -146,6 +160,14 @@ export const cancelarReserva = async (req, res) => {
 // GET: Obtener TODAS las reservas (solo admin)
 export const obtenerTodasReservas = async (req, res) => {
   try {
+    // Marcar como completadas las pasadas
+    const [result] = await pool.query(`
+      UPDATE reservas 
+      SET estado = 'completada' 
+      WHERE estado = 'confirmada'
+      AND fecha < CURDATE()
+    `);
+
     const [reservas] = await pool.query(`
       SELECT r.*, a.nombre as aula_nombre, u.nombre as usuario_nombre 
       FROM reservas r
@@ -153,11 +175,13 @@ export const obtenerTodasReservas = async (req, res) => {
       JOIN usuarios u ON r.usuario_id = u.id
       ORDER BY r.fecha DESC, r.hora_inicio ASC
     `);
-    
+
     res.json(reservas);
   } catch (error) {
     console.error("Error obteniendo reservas:", error);
-    res.status(500).json({ mensaje: "Error en el servidor", error: error.message });
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
   }
 };
 
@@ -188,7 +212,9 @@ export const obtenerReservasPorUsuario = async (req, res) => {
     res.json(reservas);
   } catch (error) {
     console.error("Error obteniendo reservas del usuario:", error);
-    res.status(500).json({ mensaje: "Error en el servidor", error: error.message });
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
   }
 };
 
@@ -234,9 +260,7 @@ export const obtenerDisponibilidad = async (req, res) => {
     });
   } catch (error) {
     console.error("Error en obtenerDisponibilidad:", error);
-    res
-      .status(500)
-      .json({ mensaje: "Error en el servidor", error: error.message });
+    res.status(400).json({ mensaje: error.message });
   }
 };
 

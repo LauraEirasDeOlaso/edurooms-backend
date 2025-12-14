@@ -75,7 +75,7 @@ export const crearUsuario = async (req, res) => {
         departamento: nuevoUsuario.departamento,
       },
       // NUEVO: Mostrar contraseña temporal al admin/separando valores
-      passwordTemporal: passwordTemporal,  // ← Solo la contraseña
+      passwordTemporal: passwordTemporal, // ← Solo la contraseña
       aviso: "⚠️ Comunica esto al usuario de forma segura", // Aviso aparte
     });
   } catch (error) {
@@ -230,34 +230,28 @@ export const cambiarPassword = async (req, res) => {
         .json({ mensaje: "Las contraseñas nuevas no coinciden" });
     }
 
-    // NUEVO: Si el usuario NO es admin, debe verificar contraseña actual
-    if (req.usuario.rol !== "administrador" && !esPrimeraVez) {
-      if (!passwordActual) {
-        return res.status(400).json({ mensaje: "Contraseña actual requerida" });
-      }
+    // Si el usuario NO es admin, debe verificar contraseña actual
 
-      // Obtener usuario completo (con password hash)
-      const usuarioCompleto = await pool.query(
-        "SELECT password FROM usuarios WHERE id = ?",
-        [id]
-      );
-
-      const passwordValida = await Usuario.verificarPassword(
-        passwordActual,
-        usuarioCompleto[0][0].password
-      );
-
-      if (!passwordValida) {
-        return res
-          .status(401)
-          .json({ mensaje: "Contraseña actual incorrecta" });
-      }
-      // después de verificar que la contraseña actual es correcta
-      if (passwordActual === passwordNueva) {
-        return res.status(400).json({
-          mensaje: "La nueva contraseña debe ser diferente a la actual",
-        });
-      }
+    if (!passwordActual) {
+      return res.status(400).json({ mensaje: "Contraseña actual requerida" });
+    }
+    // Obtener usuario completo (con password hash)
+    const usuarioCompleto = await pool.query(
+      "SELECT password FROM usuarios WHERE id = ?",
+      [id]
+    );
+    const passwordValida = await Usuario.verificarPassword(
+      passwordActual,
+      usuarioCompleto[0][0].password
+    );
+    if (!passwordValida) {
+      return res.status(401).json({ mensaje: "Contraseña actual incorrecta" });
+    }
+    // después de verificar que la contraseña actual es correcta
+    if (passwordActual === passwordNueva) {
+      return res.status(400).json({
+        mensaje: "La nueva contraseña debe ser diferente a la actual",
+      });
     }
 
     // NUEVO: Cambiar contraseña
@@ -332,7 +326,6 @@ export const obtenerPorId = async (req, res) => {
       .status(500)
       .json({ mensaje: "Error en el servidor", error: error.message });
   }
-
 };
 
 // ============================================
@@ -355,10 +348,10 @@ export const subirFotoPerfil = async (req, res) => {
 
     // Guardar ruta en BD
     const fotoRuta = `uploads/${req.file.filename}`;
-    await pool.query(
-      "UPDATE usuarios SET foto_ruta = ? WHERE id = ?",
-      [fotoRuta, id]
-    );
+    await pool.query("UPDATE usuarios SET foto_ruta = ? WHERE id = ?", [
+      fotoRuta,
+      id,
+    ]);
 
     res.json({
       mensaje: "✅ Foto de perfil actualizada",

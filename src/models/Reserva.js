@@ -1,4 +1,5 @@
 import { pool } from "../config/db.js";
+import { Aula } from "../models/Aula.js";
 
 export class Reserva {
   // Crear nueva reserva
@@ -43,8 +44,9 @@ export class Reserva {
   static async obtenerPorUsuario(usuario_id) {
     try {
       const [rows] = await pool.query(
-        `SELECT r.*, a.nombre as aula_nombre 
+        `SELECT r.*, u.nombre as usuario_nombre, a.nombre as aula_nombre 
          FROM reservas r
+         JOIN usuarios u ON r.usuario_id = u.id
          JOIN aulas a ON r.aula_id = a.id
          WHERE r.usuario_id = ?
          ORDER BY r.fecha DESC`,
@@ -110,30 +112,37 @@ export class Reserva {
   }
 
   // Verificar solapamiento por USUARIO (no por aula)
-static async verificarSolapamientoUsuario(usuario_id, fecha, hora_inicio, hora_fin) {
-  try {
-    const query = `SELECT * FROM reservas 
+  static async verificarSolapamientoUsuario(
+    usuario_id,
+    fecha,
+    hora_inicio,
+    hora_fin
+  ) {
+    try {
+      const query = `SELECT * FROM reservas 
                    WHERE usuario_id = ? 
                    AND DATE(fecha) = ? 
                    AND estado = 'confirmada'
                    AND ((hora_inicio < ? AND hora_fin > ?)
                         OR (hora_inicio < ? AND hora_fin > ?))`;
 
-    const params = [
-      usuario_id,
-      fecha,
-      hora_fin,
-      hora_inicio,
-      hora_fin,
-      hora_inicio,
-    ];
+      const params = [
+        usuario_id,
+        fecha,
+        hora_fin,
+        hora_inicio,
+        hora_fin,
+        hora_inicio,
+      ];
 
-    const [rows] = await pool.query(query, params);
-    return rows.length > 0; // true si hay solapamiento
-  } catch (error) {
-    throw new Error(`Error verificando solapamiento de usuario: ${error.message}`);
+      const [rows] = await pool.query(query, params);
+      return rows.length > 0; // true si hay solapamiento
+    } catch (error) {
+      throw new Error(
+        `Error verificando solapamiento de usuario: ${error.message}`
+      );
+    }
   }
-}
 
   // Cancelar reserva
   static async cancelar(id) {
@@ -146,6 +155,38 @@ static async verificarSolapamientoUsuario(usuario_id, fecha, hora_inicio, hora_f
       return result.affectedRows > 0;
     } catch (error) {
       throw new Error(`Error al cancelar reserva: ${error.message}`);
+    }
+  }
+
+  // Marcar reserva como completada
+  static async marcarCompletada(id) {
+    try {
+      const [result] = await pool.query(
+        "UPDATE reservas SET estado = 'completada' WHERE id = ?",
+        [id]
+      );
+      return result.affectedRows > 0;
+    } catch (error) {
+      throw new Error(`Error al marcar como completada: ${error.message}`);
+    }
+  }
+
+  // Marcar como completadas todas las reservas pasadas de un usuario
+  static async actualizarReservasCompletadas(usuario_id) {
+    try {
+      const [result] = await pool.query(
+        `UPDATE reservas 
+       SET estado = 'completada' 
+       WHERE usuario_id = ? 
+       AND estado = 'confirmada'
+       AND fecha < CURDATE()`,
+        [usuario_id]
+      );
+      return result.affectedRows;
+    } catch (error) {
+      throw new Error(
+        `Error actualizando reservas completadas: ${error.message}`
+      );
     }
   }
 
@@ -170,6 +211,15 @@ static async verificarSolapamientoUsuario(usuario_id, fecha, hora_inicio, hora_f
   // Obtener disponibilidad de un aula en una fecha
   static async obtenerDisponibilidad(aula_id, fecha) {
     try {
+      //Validar que el aula no esté en mantenimiento
+      const aula = await Aula.obtenerPorId(aula_id);
+      if (!aula) {
+        throw new Error("Aula no encontrada");
+      }
+      if (aula.estado === "mantenimiento") {
+        throw new Error("Aula en mantenimiento. No se pueden hacer reservas");
+      }
+
       // Generar horarios de funcionamiento: 8:00 a 21:00, intervalos de 1.5 horas
       const horarios = this.generarHorarios(fecha);
 
@@ -183,10 +233,14 @@ static async verificarSolapamientoUsuario(usuario_id, fecha, hora_inicio, hora_f
       horarios.forEach((horario) => {
         const { hora_inicio, hora_fin } = horario;
 
+        // NORMALIZAR FORMATOS
+        const inicio_norm = hora_inicio + ":00"; // "09:30" → "09:30:00"
+        const fin_norm = hora_fin + ":00"; // "11:00" → "11:00:00"
+
         // Verificar si este horario se superpone con alguna reserva
         const ocupado = reservas.some((reserva) => {
           return (
-            hora_inicio < reserva.hora_fin && hora_fin > reserva.hora_inicio
+            inicio_norm < reserva.hora_fin && fin_norm > reserva.hora_inicio
           );
         });
 
@@ -230,12 +284,12 @@ static async verificarSolapamientoUsuario(usuario_id, fecha, hora_inicio, hora_f
     horaFinal.setHours(21, 0, 0, 0); // Terminar a las 21:00
 
     // Si es hoy, empieza desde hora actual + 1 hora
-  if (esHoy) {
-    const ahora = new Date();
-    ahora.setHours(ahora.getHours() + 1, 0, 0);
-    if (ahora > horaFinal) return horarios; // Ya pasó el horario
-    horaActual = ahora;
-  }
+    if (esHoy) {
+      const ahora = new Date();
+      ahora.setHours(ahora.getHours() + 1, 0, 0);
+      if (ahora > horaFinal) return horarios; // Ya pasó el horario
+      horaActual = ahora;
+    }
 
     while (horaActual < horaFinal) {
       const hora_inicio = this.formatoHora(horaActual);

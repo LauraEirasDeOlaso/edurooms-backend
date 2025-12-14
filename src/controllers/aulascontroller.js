@@ -108,6 +108,16 @@ export const actualizarAula = async (req, res) => {
       return res.status(404).json({ mensaje: "Aula no encontrada" });
     }
 
+    // Si el estado cambia a "mantenimiento", cancelar reservas
+    let reservasCanceladas = 0;
+    if (estado === "mantenimiento" && aula.estado !== "mantenimiento") {
+      const [result] = await pool.query(
+        "UPDATE reservas SET estado = 'cancelada' WHERE aula_id = ? AND estado = 'confirmada'",
+        [id]
+      );
+      reservasCanceladas = result.affectedRows;
+    }
+
     // Actualizar en BD
     const [result] = await pool.query(
       "UPDATE aulas SET nombre = ?, capacidad = ?, ubicacion = ?, codigo_qr = ?, estado = ? WHERE id = ?",
@@ -121,7 +131,9 @@ export const actualizarAula = async (req, res) => {
     const aulasActualizada = await Aula.obtenerPorId(id);
 
     res.json({
-      mensaje: "✅ Aula actualizada correctamente",
+      mensaje: reservasCanceladas > 0 
+        ? `✅ Aula actualizada. ${reservasCanceladas} reserva(s) cancelada(s)`
+        : "✅ Aula actualizada correctamente",
       aula: aulasActualizada,
     });
   } catch (error) {

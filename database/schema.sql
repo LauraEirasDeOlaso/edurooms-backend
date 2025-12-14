@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS aulas (
   capacidad INT NOT NULL,
   ubicacion VARCHAR(200),
   codigo_qr VARCHAR(255) UNIQUE,
-  estado ENUM('disponible', 'ocupada', 'mantenimiento') DEFAULT 'disponible',
+  estado ENUM('disponible', 'mantenimiento') DEFAULT 'disponible',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -48,12 +48,11 @@ CREATE TABLE IF NOT EXISTS reservas (
   fecha DATE NOT NULL,
   hora_inicio TIME NOT NULL,
   hora_fin TIME NOT NULL,
-  estado ENUM('confirmada', 'cancelada') DEFAULT 'confirmada',
+  estado ENUM('confirmada', 'cancelada', 'completada') DEFAULT 'confirmada',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
-  FOREIGN KEY (aula_id) REFERENCES aulas(id) ON DELETE CASCADE,
-  UNIQUE KEY unique_reserva (aula_id, fecha, hora_inicio)
+  FOREIGN KEY (aula_id) REFERENCES aulas(id) ON DELETE CASCADE
 );
 
 -- ============================================
