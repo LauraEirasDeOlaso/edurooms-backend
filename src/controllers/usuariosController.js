@@ -137,11 +137,19 @@ export const editarUsuario = async (req, res) => {
 export const eliminarUsuario = async (req, res) => {
   try {
     const { id } = req.params;
+    
 
     // Verificar que el usuario existe
     const usuario = await Usuario.buscarPorId(id);
     if (!usuario) {
       return res.status(404).json({ mensaje: "Usuario no encontrado" });
+    }
+
+    // Verificar que no sea administrador
+    if (usuario.rol === "administrador") {
+      return res.status(403).json({ 
+        mensaje: "❌ No se puede eliminar un administrador" 
+      });
     }
 
     // NUEVO: Verificar si el usuario tiene reservas confirmadas

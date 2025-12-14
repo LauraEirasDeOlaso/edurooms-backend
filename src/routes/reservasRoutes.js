@@ -10,6 +10,7 @@ import {
   traspasoReserva,
   obtenerReservasPorUsuario,
   obtenerTodasReservas,
+  reactivarReserva,
 } from "../controllers/reservasController.js";
 
 
@@ -31,5 +32,7 @@ router.get("/admin/todas", verificarToken, verificarRol(["administrador"]), obte
 
 // NUEVO: Traspasar reserva a otra aula (solo admin)
 router.put("/:id/traspasar", verificarToken, verificarRol(["administrador"]), traspasoReserva);
+// NUEVO: Reactivar reserva cancelada (solo admin)
+router.put("/:id/reactivar", verificarToken, verificarRol(["administrador"]), reactivarReserva);
 
 export default router;

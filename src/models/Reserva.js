@@ -338,4 +338,17 @@ export class Reserva {
       throw new Error(`Error al traspasar reserva: ${error.message}`);
     }
   }
+  // Actualizar estado de una reserva
+  static async actualizarEstado(id, estado) {
+    try {
+      const [result] = await pool.query(
+        "UPDATE reservas SET estado = ? WHERE id = ?",
+        [estado, id]
+      );
+
+      return result.affectedRows > 0;
+    } catch (error) {
+      throw new Error(`Error al actualizar estado: ${error.message}`);
+    }
+  }
 }

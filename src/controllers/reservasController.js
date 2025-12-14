@@ -315,3 +315,54 @@ export const traspasoReserva = async (req, res) => {
       .json({ mensaje: "Error en el servidor", error: error.message });
   }
 };
+
+// ============================================
+// NUEVO: Reactivar reserva cancelada (solo admin)
+// ============================================
+export const reactivarReserva = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Obtener reserva
+    const reserva = await Reserva.obtenerPorId(id);
+    if (!reserva) {
+      return res.status(404).json({ mensaje: "Reserva no encontrada" });
+    }
+
+    // Validar que esté cancelada
+    if (reserva.estado !== "cancelada") {
+      return res.status(400).json({ 
+        mensaje: "Solo puedes reactivar reservas canceladas" 
+      });
+    }
+
+    // Verificar que no haya solapamiento en la fecha/aula/horario
+    const hay_solapamiento = await Reserva.verificarSolapamiento(
+      reserva.aula_id,
+      reserva.fecha,
+      reserva.hora_inicio,
+      reserva.hora_fin,
+      id  // Excluir esta reserva del chequeo
+    );
+
+    if (hay_solapamiento) {
+      return res.status(400).json({ 
+        mensaje: "❌ No se puede reactivar. Hay otra reserva en ese horario" 
+      });
+    }
+
+    // Cambiar estado a confirmada
+    const actualizado = await Reserva.actualizarEstado(id, "confirmada");
+
+    if (actualizado) {
+      res.json({ mensaje: "✅ Reserva reactivada correctamente" });
+    } else {
+      res.status(400).json({ mensaje: "No se pudo reactivar la reserva" });
+    }
+  } catch (error) {
+    console.error("Error en reactivarReserva:", error);
+    res
+      .status(500)
+      .json({ mensaje: "Error en el servidor", error: error.message });
+  }
+};

@@ -42,8 +42,9 @@ export class Incidencia {
   static async obtenerPorAula(aula_id) {
     try {
       const [rows] = await pool.query(
-        `SELECT i.*, u.nombre as usuario_nombre
+        `SELECT i.*, a.nombre as aula_nombre, u.nombre as usuario_nombre
          FROM incidencias i
+         JOIN aulas a ON i.aula_id = a.id
          JOIN usuarios u ON i.usuario_id = u.id
          WHERE i.aula_id = ?
          ORDER BY i.created_at DESC`,
