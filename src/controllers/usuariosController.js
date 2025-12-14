@@ -390,8 +390,14 @@ export const obtenerFotoPerfil = async (req, res) => {
       return res.status(404).json({ mensaje: "Usuario no encontrado" });
     }
 
+    // ✅ AGREGAR: Convertir a URL absoluta
+    const baseUrl = process.env.BASE_URL || 'https://edurooms-backend-production.up.railway.app';
+    const fotoUrl = rows[0].foto_ruta ? 
+      `${baseUrl}/${rows[0].foto_ruta}` : 
+      null;
+
     res.json({
-      foto_ruta: rows[0].foto_ruta || null,
+      foto_ruta: fotoUrl
     });
   } catch (error) {
     console.error("Error obteniendo foto:", error);
