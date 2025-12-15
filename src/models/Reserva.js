@@ -284,12 +284,21 @@ export class Reserva {
     horaFinal.setHours(21, 0, 0, 0); // Terminar a las 21:00
 
     // Si es hoy, empieza desde hora actual + 1 hora
-    if (esHoy) {
-      const ahora = new Date();
-      ahora.setHours(ahora.getHours() + 1, 0, 0);
-      if (ahora > horaFinal) return horarios; // Ya pasó el horario
-      horaActual = ahora;
+  if (esHoy) {
+    const ahora = new Date();
+    ahora.setHours(ahora.getHours() + 1, 0, 0);
+    if (ahora > horaFinal) return horarios; // Ya pasó el horario
+    
+    // ✅ AGREGAR: Validar que sea al menos 8:00
+    const horaMinima = new Date();
+    horaMinima.setHours(8, 0, 0, 0);
+    
+    if (ahora < horaMinima) {
+      horaActual = horaMinima;  // Usar 8:00 como mínimo
+    } else {
+      horaActual = ahora;  // Usar hora actual + 1
     }
+  }
 
     while (horaActual < horaFinal) {
       const hora_inicio = this.formatoHora(horaActual);
