@@ -94,7 +94,7 @@ export const login = async (req, res) => {
     // Crear token JWT
     // NUEVO: Incluir primera_vez_login en el token
     const token = jwt.sign(
-      { id: usuario.id, email: usuario.email, rol: usuario.rol, primera_vez_login: usuario.primera_vez_login },
+      { id: usuario.id, email: usuario.email, rol: usuario.rol, departamento: usuario.departamento, primera_vez_login: usuario.primera_vez_login },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
@@ -106,6 +106,7 @@ export const login = async (req, res) => {
         nombre: usuario.nombre,
         email: usuario.email,
         rol: usuario.rol,
+        departamento: usuario.departamento,
         primera_vez_login: usuario.primera_vez_login === 1 ? true : false
       },
       token,

@@ -43,7 +43,7 @@ export class Usuario {
   static async buscarPorId(id) {
     try {
       const [rows] = await pool.query(
-        "SELECT id, nombre, email, rol, created_at FROM usuarios WHERE id = ?",
+        "SELECT id, nombre, email, rol, departamento, created_at FROM usuarios WHERE id = ?",
         [id]
       );
 
